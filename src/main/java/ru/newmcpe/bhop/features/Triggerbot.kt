@@ -1,22 +1,30 @@
 package ru.newmcpe.bhop.features
 
-import ru.newmcpe.bhop.api.entites.Player
+import com.badlogic.gdx.graphics.Color
+import ru.newmcpe.bhop.api.entites.EntityManager
 import ru.newmcpe.bhop.api.features.Feature
-import java.awt.Robot
+import ru.newmcpe.bhop.util.Schedule
 import java.awt.event.InputEvent
-import java.awt.event.KeyEvent
+import java.util.concurrent.TimeUnit
 
-class Triggerbot: Feature("TriggerBot") {
+class Triggerbot : Feature("TriggerBot") {
+    var lastShot = System.currentTimeMillis()
     override fun update() {
-        val localPlayer = Player.getMe()
+        val localPlayer = EntityManager.getLocalPlayer()
 
         val crosshairId = localPlayer.getCrosshairId()
 
-        if(crosshairId in 1..63){
-            val player = Player.getById(crosshairId)
+        if (crosshairId in 1..63) {
+            val player = EntityManager.getById(crosshairId)
 
-           if(localPlayer.getTeam() != player.getTeam()) {
-                Player.getMe().pressMouse(InputEvent.BUTTON1_MASK)
+            if (localPlayer.getTeam() != player.getTeam()) {
+                if((System.currentTimeMillis() - lastShot) >= 100) {
+                    Schedule.runWithDelay({
+                        EntityManager.getLocalPlayer().pressMouse()
+                    }, 5, TimeUnit.MILLISECONDS)
+
+                    lastShot = System.currentTimeMillis()
+                }
             }
         }
     }

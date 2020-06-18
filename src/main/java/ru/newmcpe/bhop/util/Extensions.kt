@@ -4,7 +4,6 @@ import com.sun.jna.Memory
 import org.jire.arrowhead.Module
 import org.jire.arrowhead.Source
 import org.jire.arrowhead.unsign
-import ru.newmcpe.bhop.api.entites.LocalPlayer
 import ru.newmcpe.bhop.offsets.ModuleScan
 import ru.newmcpe.bhop.offsets.Offset
 import java.nio.ByteBuffer
@@ -26,6 +25,7 @@ internal operator fun Module.invoke(patternOffset: Long = 0, addressOffset: Long
     ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(offset.toInt()).array())
 
 fun Source.uint(address: Long, offset: Long = 0) = int(address, offset).unsign()
+
 
 data class RepeatedInt(val value: Int, val repeats: Int)
 
