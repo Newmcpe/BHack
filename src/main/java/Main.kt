@@ -1,5 +1,12 @@
-import ru.newmcpe.bhop.Bhop
+import javafx.application.Application
+import ru.newmcpe.bhack.fxml.App
 
-fun main() {
-    Bhop.init()
+class Main {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>){
+            Application.launch(App::class.java)
+        }
+    }
 }

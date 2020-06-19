@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@menu.css" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.newmcpe.bhack.fxml.menu.MenuController">
+  <tabs>
+    <Tab closable="false" styleClass="dirty" text="ESP">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+               <children>
+                  <RadioButton fx:id="GlowESP" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#clickFeature" text="Обводка" textFill="WHITE" />
+                  <RadioButton fx:id="NameESP" layoutX="14.0" layoutY="40.0" mnemonicParsing="false" onAction="#clickFeature" text="Показывать никнеймы" textFill="WHITE" />
+                  <RadioButton fx:id="BoxESP" layoutX="14.0" layoutY="66.0" mnemonicParsing="false" onAction="#clickFeature" text="Рисовать коробки" textFill="WHITE" />
+               </children></AnchorPane>
+      </content>
+    </Tab>
+    <Tab closable="false" styleClass="dirty" text="Misc">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+               <children>
+                  <RadioButton fx:id="BunnyHop" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#clickFeature" text="BunnyHop" textFill="WHITE" />
+                  <RadioButton fx:id="TriggerBot" layoutX="14.0" layoutY="40.0" mnemonicParsing="false" onAction="#clickFeature" text="Тригербот" textFill="WHITE" />
+               </children></AnchorPane>
+      </content>
+    </Tab>
+  </tabs>
+</TabPane>
