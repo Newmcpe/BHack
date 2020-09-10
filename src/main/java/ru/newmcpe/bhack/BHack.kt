@@ -2,9 +2,6 @@
 
 package ru.newmcpe.bhack
 
-import ru.newmcpe.bhack.overlay.RenderOverlay
-import ru.newmcpe.bhack.overlay.RenderOverlay.camera
-import ru.newmcpe.bhack.overlay.Overlay
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
@@ -12,15 +9,24 @@ import com.sun.jna.platform.win32.WinNT
 import org.jire.arrowhead.Module
 import org.jire.arrowhead.Process
 import org.jire.arrowhead.processByName
+import org.jnativehook.GlobalScreen
 import ru.newmcpe.bhack.api.features.FeaturesManager
 import ru.newmcpe.bhack.offsets.netvars.NetVars
+import ru.newmcpe.bhack.overlay.Overlay
+import ru.newmcpe.bhack.overlay.RenderOverlay
+import ru.newmcpe.bhack.overlay.RenderOverlay.camera
+import ru.newmcpe.bhack.util.natives.GlobalKeyListener
 import ru.newmcpe.bhack.util.every
 import ru.newmcpe.bhack.util.inBackground
 import ru.newmcpe.bhack.util.natives.CUser32
+import ru.newmcpe.bhack.util.natives.GlobalMouseListener
 import ru.newmcpe.bhack.util.retry
 import java.awt.Robot
 import java.io.File
+import java.util.*
 import java.util.concurrent.Executors
+import java.util.logging.Level
+
 
 object BHack {
     lateinit var clientDLL: Module
@@ -101,8 +107,24 @@ object BHack {
         NetVars.load()
         FeaturesManager.init()
 
+        GlobalScreen.registerNativeHook();
+        GlobalScreen.addNativeKeyListener(GlobalKeyListener())
+        GlobalScreen.addNativeMouseListener(GlobalMouseListener())
+
+        java.util.logging.Logger.getLogger("org.jnativehook.GlobalScreen.NativeHookThread").level = Level.OFF
         println("BHack by Newmcpe")
         println("Contract me: newmcpe.ru")
+
+        executorService.submit {
+            val scanner = Scanner(System.`in`)
+
+            while (scanner.hasNextLine()) {
+                val line = scanner.nextLine()
+                if (line == "gc") System.gc()
+            }
+        }
+
+        // Entity.getMe().writeAngles(Vector(100.0, 100.0, 0.0))
     }
 
     fun getRobot(): Robot {

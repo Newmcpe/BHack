@@ -11,10 +11,8 @@ import javafx.scene.image.Image
 import javafx.stage.Stage
 import kotlin.system.exitProcess
 
-class App: Application() {
+class App : Application() {
     override fun start(primaryStage: Stage) {
-
-
         val root = FXMLLoader.load<Parent>(Main::class.java.getResource("main.fxml"))
         primaryStage.title = "BHack Loader"
         primaryStage.scene = Scene(root, 500.0, 300.0)

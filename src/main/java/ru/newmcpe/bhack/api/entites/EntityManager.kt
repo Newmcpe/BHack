@@ -1,67 +1,58 @@
 package ru.newmcpe.bhack.api.entites
 
-import ru.newmcpe.bhack.BHack
+import ru.newmcpe.bhack.BHack.clientDLL
+import ru.newmcpe.bhack.BHack.engineDLL
 import ru.newmcpe.bhack.offsets.ClientOffsets
 import ru.newmcpe.bhack.util.uint
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import kotlin.collections.HashMap
 
 object EntityManager {
-    private val ENTITIES: MutableList<Entity> = CopyOnWriteArrayList()
+    private val ENTITIES: MutableMap<Int, Entity> = Collections.synchronizedMap(HashMap())
+    var dwClientState = engineDLL.uint(ClientOffsets.dwClientState)
 
     @ExperimentalUnsignedTypes
     fun updateEntities() {
-        val localPlayerBase = BHack.clientDLL.uint(ClientOffsets.dwLocalPlayer)
-        val localPlayer = LocalPlayer(localPlayerBase)
+        dwClientState = engineDLL.uint(ClientOffsets.dwClientState)
+        for (i in 1..63) {
+            val entityOffset = clientDLL.uint(ClientOffsets.dwEntityList + (i * 16L))
 
-        if (localPlayer.pointer != 0L && !containsEntity(localPlayer)) {
-            ENTITIES.add(localPlayer)
-            println("Добавил локального игрока ${localPlayer.pointer.toUInt()} в кэш. Размер: ${ENTITIES.size}")
-        }
+            if (entityOffset == getLocalPlayer().pointer) continue
+            if (!isEntityValid(entityOffset)) {
+                continue
+            }
 
-        if (localPlayer.pointer != 0L) {
-            for (i in 1..63) {
-                val entityOffset = BHack.clientDLL.uint(ClientOffsets.dwEntityList + (i * 16L))
+            val entity = Entity(entityOffset)
 
-                if (entityOffset == localPlayerBase) continue;
-                if (!isEntityValid(entityOffset)) continue;
+            if (entityOffset != 0L && !containsEntity(entity)) {
+                ENTITIES[i] = entity
 
-                val entity = Entity(entityOffset)
-
-                if (entityOffset != 0L && !containsEntity(entity)) {
-                    ENTITIES.add(entity)
-
-                    println("Добавил сущность игрока ${localPlayer.pointer.toUInt()} в кэш. Размер: ${ENTITIES.size}")
-                }
+                println("Добавил сущность игрока ${entity.getName()} в кэш. Размер: ${ENTITIES.size}")
             }
         }
     }
 
-    fun forEach(consumer: (Entity) -> Unit) = ENTITIES.filter { it.pointer != Entity.getMe().pointer }.forEach(consumer)
-
-    fun forEachIndexed(consumer: (Int, Entity) -> Unit)  = ENTITIES.filter { it.pointer != Entity.getMe().pointer }.forEachIndexed(consumer)
-
     fun getEntities() = ENTITIES
 
-    fun getById(id: Int): Entity {
-        val entityPointer = BHack.clientDLL.uint(ClientOffsets.dwEntityList + ((id - 1) * 16))
+    fun getEntityByCrosshairId(id: Int) =
+        ENTITIES.values.first { it.pointer == clientDLL.uint(ClientOffsets.dwEntityList + (id - 1) * 0x10) }
 
-        return getEntityFromPointer(entityPointer)
-    }
+    fun getLocalPlayer(): LocalPlayer = LocalPlayer(clientDLL.uint(ClientOffsets.dwLocalPlayer))
 
-    fun getLocalPlayer(): LocalPlayer = ENTITIES.first() as LocalPlayer
-
-    fun isEntityValid(entity: Entity) = isEntityValid(entity.pointer)
-
-    private fun containsEntity(entity: Entity) = ENTITIES.any { it == entity }
-
-    private fun getEntityFromPointer(entityPointer: Long): Entity = ENTITIES.first { it.pointer == entityPointer }
+    private fun containsEntity(entity: Entity) = ENTITIES.any { it.value == entity }
 
     private fun isEntityValid(base: Long): Boolean {
         if (base == 0L) return false
-        if (BHack.clientDLL.uint(ClientOffsets.dwLocalPlayer) == base) return true
+        if (clientDLL.uint(ClientOffsets.dwLocalPlayer) == base) return true
 
         return true
     }
 
+    fun isEntityValid(entity: Entity): Boolean {
+        if (!isEntityValid(entity.pointer)) return false
+        if (entity.dead) return false
+
+        return true
+    }
 
 }

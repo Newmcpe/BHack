@@ -2,6 +2,7 @@ package ru.newmcpe.bhack.api.entites
 
 import ru.newmcpe.bhack.BHack.clientDLL
 import ru.newmcpe.bhack.BHack.csgo
+import ru.newmcpe.bhack.api.entites.EntityManager.dwClientState
 import ru.newmcpe.bhack.offsets.ClientOffsets
 import ru.newmcpe.bhack.offsets.ClientOffsets.bDormant
 import ru.newmcpe.bhack.offsets.ClientOffsets.dwEntityList
@@ -9,13 +10,15 @@ import ru.newmcpe.bhack.offsets.ClientOffsets.dwLocalPlayer
 import ru.newmcpe.bhack.offsets.ClientOffsets.dwRadarBase
 import ru.newmcpe.bhack.offsets.ClientOffsets.dwViewAngles
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets
+import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.bSpottedByMask
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.dwBoneMatrix
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.fFlags
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.iHealth
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.iTeamNum
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.vecOrigin
+import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.vecPunch
 import ru.newmcpe.bhack.offsets.netvars.NetVarOffsets.vecViewOffset
-import ru.newmcpe.bhack.util.Vec3f
+import ru.newmcpe.bhack.util.Vector
 import ru.newmcpe.bhack.util.uint
 
 open class Entity(
@@ -33,30 +36,71 @@ open class Entity(
 
     fun getArmor() = csgo.int(pointer + NetVarOffsets.bSpotted)
 
-    fun getPos(): Vec3f {
+    fun getPos(): Vector {
         val x: Float = csgo.float(pointer + vecOrigin)
-        val z: Float = csgo.float(pointer + vecOrigin + 0x4)
-        val y: Float = csgo.float(pointer + vecOrigin + 0x8)
-        return Vec3f(x, y, z)
+        val y: Float = csgo.float(pointer + vecOrigin + 0x4)
+        val z: Float = csgo.float(pointer + vecOrigin + 0x8)
+        return Vector(x.toDouble(), y.toDouble(), z.toDouble())
     }
 
-    fun getViewOffsets(): Vec3f {
+    fun getViewOffsets(): Vector {
         val x = csgo.float(pointer + vecViewOffset)
         val y = csgo.float(pointer + vecViewOffset + 0x4)
         val z = csgo.float(pointer + vecViewOffset + 0x8)
 
-        return Vec3f(x, y, z)
+        return Vector(x.toDouble(), y.toDouble(), z.toDouble())
     }
 
-    fun getPitch() = csgo.float(pointer + dwViewAngles)
+    fun getBonePos(id: Int): Vector {
+        val bone = Vector()
+        bone.x = this.bone(0x0C, id)
+        bone.y = this.bone(0x1C, id)
+        bone.z = this.bone(0x2C, id)
+        return bone
+    }
 
-    fun getYaw() = csgo.float(pointer + dwViewAngles + 0x4)
+    fun getPitch() = csgo.float(dwClientState + dwViewAngles)
 
-    fun getRoll() = csgo.float(pointer + dwViewAngles + 0x8)
+    fun getYaw() = csgo.float(dwClientState + dwViewAngles + 4)
 
-    fun getViewAngles() = Vec3f(getYaw(), getPitch(), getRoll());
+    fun getRoll() = csgo.float(dwClientState + dwViewAngles + 8)
 
-    fun getId() = EntityManager.getEntities().indexOf(this)
+    val spotted: Boolean
+        get() {
+            val spottedByMask = csgo.uint(pointer + bSpottedByMask)
+            println("spooted $spottedByMask")
+            return spottedByMask != 0L
+        }
+
+    var viewAngles = Vector()
+        get() = Vector(getYaw().toDouble(), getPitch().toDouble(), getRoll().toDouble());
+        set(value) {
+            field = value
+
+            println("angles to aim for yaw = ${value.x}, pitch ${value.y}")
+
+            csgo[dwClientState + dwViewAngles] = value.x.toFloat()
+            csgo[dwClientState + dwViewAngles + 4] = value.y.toFloat()
+        }
+
+    fun getId() = EntityManager.getEntities().filterValues { it.pointer == this.pointer }.keys.first()
+
+    val punch: Vector
+        get() = Vector().apply {
+            x = csgo.float(pointer + vecPunch).toDouble()
+            y = csgo.float(pointer + vecPunch + 4).toDouble()
+            z = 0.0
+        }
+
+    fun writeAngles(value: Vector) {
+        println("angles to aim: yaw = ${value.x}, pitch ${value.y}")
+
+        csgo[dwClientState + dwViewAngles] = value.x
+        csgo[dwClientState + dwViewAngles + 4] = value.y
+
+        println(getYaw())
+        println(getPitch())
+    }
 
     val lifeState
         get() = csgo.byte(pointer + NetVarOffsets.lifeState).toInt()
@@ -75,7 +119,8 @@ open class Entity(
     fun getName(): String {
         val radarBase = clientDLL.uint(dwRadarBase)
         val radar = csgo.uint(radarBase + 0x74)
-        return csgo.read(radar + 0x300 + (0x174 * (getId())), 32, false)?.getString(0) ?: "Newmcpe is gay"
+        val id = getId()
+        return csgo.read(radar + 0x300 + 0x174 * (id), 32, false)?.getString(0) ?: "Newmcpe is gay"
     }
 
     fun bone(offset: Int, boneID: Int = 8, boneMatrix: Long = boneMatrix()) =
@@ -98,9 +143,7 @@ open class Entity(
 
     override fun equals(other: Any?): Boolean {
         if (other is Entity) {
-            if (this.pointer == other.pointer) {
-                return true
-            }
+            return this.pointer == other.pointer
         }
         return false
     }

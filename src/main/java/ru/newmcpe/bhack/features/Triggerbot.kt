@@ -13,7 +13,7 @@ class Triggerbot : Feature("TriggerBot") {
         val crosshairId = localPlayer.getCrosshairId()
 
         if (crosshairId in 1..63) {
-            val player = EntityManager.getById(crosshairId)
+            val player = EntityManager.getEntityByCrosshairId(crosshairId)
 
             if (localPlayer.getTeam() != player.getTeam()) {
                 if((System.currentTimeMillis() - lastShot) >= 100) {

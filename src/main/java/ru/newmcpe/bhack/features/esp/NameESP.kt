@@ -21,7 +21,7 @@ class NameESP: Feature("NameESP") {
     init {
         RenderOverlay {
             if(!enabled) return@RenderOverlay
-            EntityManager.forEach { entity ->
+            EntityManager.getEntities().forEach { (index, entity) ->
                 vHead.set(entity.bone(0xC), entity.bone(0x1C), entity.bone(0x2C) + 9)
                 vFeet.set(vHead.x, vHead.y, vHead.z - 75)
 
@@ -34,33 +34,25 @@ class NameESP: Feature("NameESP") {
                     val sx = (vTop.x - boxW).toInt()
                     val sy = vTop.y.toInt()
 
-                    boxes[currentIdx].apply {
+               /*     boxes[index].apply {
                         x = sx
                         y = sy
                         w = Math.ceil(boxW * 2.15).toInt()
                         h = boxH.toInt()
                         color = Color.YELLOW
                         this.entity = entity
+                    }*/
+
+                    textRenderer.apply tR@{
+                        batch.begin()
+                        this@tR.color = color
+                        val name = entity.getName()
+                        draw(batch, name, sx.toFloat() , sy.toFloat() - 20)
+
+                        batch.end()
                     }
-
-                    currentIdx++
                 }
-
-                return@forEach
             }
-
-            textRenderer.apply tR@{
-                batch.begin()
-                for (i in 0..currentIdx - 1) boxes[i].apply {
-                    this@tR.color = color
-
-                    val name = entity.getName()
-                    draw(batch, name, x.toFloat() + 20, y.toFloat() - 20)
-                }
-
-                batch.end()
-            }
-            currentIdx = 0
         }
     }
 }
